@@ -40,7 +40,7 @@ contract Destination is AccessControl {
         uint256 balance = BridgeToken(_wrapped_token).balanceOf(msg.sender);
         require(balance >= _amount, "Insufficient balance to unwrap");
         BridgeToken(_wrapped_token).burnFrom(msg.sender, _amount);
-        IERC20(underlying_token).transfer(_recipient, _amount);
+        
         emit Unwrap(underlying_token, _wrapped_token, msg.sender, _recipient, _amount);
 	}
 
