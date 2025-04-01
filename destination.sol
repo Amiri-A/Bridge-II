@@ -21,51 +21,40 @@ contract Destination is AccessControl {
         _grantRole(CREATOR_ROLE, admin);
         _grantRole(WARDEN_ROLE, admin);
     }
+  
 
 	function wrap(address _underlying_token, address _recipient, uint256 _amount ) public onlyRole(WARDEN_ROLE) {
 		//YOUR CODE HERE
-    address wrapped_token = underlying_tokens[_underlying_token];
-    
-    require(wrapped_token != address(0), "Token not registered");
-    
-    
-    BridgeToken(wrapped_token).mint(_recipient, _amount);
-    
-    emit Wrap(_underlying_token, wrapped_token, _recipient, _amount);
-	}
+    address wrapped_token = wrapped_tokens[_underlying_token];
+        require(wrapped_token != address(0), "Wrapped token not registered");
+        BridgeToken(wrapped_token).mint(_recipient, _amount);
+        emit Wrap(_underlying_token, wrapped_token, _recipient, _amount);
+}
+	
 
 	function unwrap(address _wrapped_token, address _recipient, uint256 _amount ) public {
 		//YOUR CODE HERE
-    address underlying_token = wrapped_tokens[_wrapped_token];
-    
-    require(underlying_token != address(0), "Wrapped token not registered");
-    
-    uint256 balance = BridgeToken(_wrapped_token).balanceOf(msg.sender);
-    require(balance >= _amount, "Insufficient balance to unwrap");
-    
-    BridgeToken(_wrapped_token).burn(msg.sender, _amount);
-    
-    IERC20(underlying_token).transfer(_recipient, _amount);
-    
-    emit Unwrap(underlying_token, _wrapped_token, msg.sender, _recipient, _amount);
+     address underlying_token = underlying_tokens[_wrapped_token];
+        require(underlying_token != address(0), "Wrapped token not registered");
+        require(_recipient != address(0), "Invalid recipient address");
+        uint256 balance = BridgeToken(_wrapped_token).balanceOf(msg.sender);
+        require(balance >= _amount, "Insufficient balance to unwrap");
+        BridgeToken(_wrapped_token).burnFrom(msg.sender, _amount);
+        IERC20(underlying_token).transfer(_recipient, _amount);
+        emit Unwrap(underlying_token, _wrapped_token, msg.sender, _recipient, _amount);
 	}
 
 	function createToken(address _underlying_token, string memory name, string memory symbol ) public onlyRole(CREATOR_ROLE) returns(address) {
 		//YOUR CODE HERE
-    require(underlying_tokens[_underlying_token] == address(0), "Token already registered");
-    
-    BridgeToken newToken = new BridgeToken(_underlying_token, name, symbol);
-    
-    underlying_tokens[_underlying_token] = address(newToken);
-    wrapped_tokens[address(newToken)] = _underlying_token;
-    tokens.push(address(newToken));
-    
-    emit Creation(_underlying_token, address(newToken));
-    
-    return address(newToken);
+       require(wrapped_tokens[_underlying_token] == address(0), "Token already registered");
+        BridgeToken newToken = new BridgeToken(_underlying_token, name, symbol, address(this));
+        wrapped_tokens[_underlying_token] = address(newToken);
+        underlying_tokens[address(newToken)] = _underlying_token;
+        tokens.push(address(newToken));
+        emit Creation(_underlying_token, address(newToken));
+        return address(newToken);
 }
 	}
-
 
 
 
